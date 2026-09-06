@@ -29,6 +29,9 @@ class Config:
     DB_NAME: str = os.getenv("DB_NAME", "cricbuzz_livestats")
     DB_USER: str = os.getenv("DB_USER", "postgres")
     DB_PASSWORD: str = os.getenv("DB_PASSWORD", "")
+    # Hosted Postgres providers (Neon, Supabase, RDS, etc.) require SSL.
+    # Local Postgres usually doesn't need it — set DB_SSLMODE=disable if so.
+    DB_SSLMODE: str = os.getenv("DB_SSLMODE", "require")
 
     @classmethod
     def validate(cls) -> list[str]:

@@ -39,6 +39,7 @@ def _build_connection_url() -> str:
         return (
             f"postgresql+psycopg2://{config.DB_USER}:{config.DB_PASSWORD}"
             f"@{config.DB_HOST}:{config.DB_PORT}/{config.DB_NAME}"
+            f"?sslmode={config.DB_SSLMODE}"
         )
 
     if config.DB_TYPE == "mysql":
