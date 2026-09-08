@@ -72,10 +72,32 @@ def fetch_top_batting_stats(stat_type: str = "mostRuns") -> tuple[pd.DataFrame, 
         logger.warning("Top batting stats fetch failed: %s", e)
         return pd.DataFrame(), str(e)
 
-    rows = raw.get("headers", []), raw.get("values", [])
-    headers, values = rows
+    headers = raw.get("headers", [])
+    values = raw.get("values", [])
     if not values:
         return pd.DataFrame(), "No stats available right now."
 
     data = [v.get("values", []) for v in values]
-    return pd.DataFrame(data, columns=headers if headers else None), None
+    data = [row for row in data if row]  # drop any empty rows
+    if not data:
+        return pd.DataFrame(), "No stats available right now."
+
+    # The API doesn't guarantee every row is the same length as `headers`.
+    # Building a DataFrame with mismatched columns/row-lengths raises a
+    # ValueError that used to crash the whole page — instead, normalize
+    # everything to the same width first.
+    try:
+        width = len(data[0])
+        same_width = all(len(row) == width for row in data)
+        if headers and len(headers) == width and same_width:
+            return pd.DataFrame(data, columns=headers), None
+        if same_width:
+            return pd.DataFrame(data), None
+        # Ragged rows: pad/truncate each row to the most common length.
+        normalized = [
+            (row + [None] * width)[:width] for row in data
+        ]
+        return pd.DataFrame(normalized), None
+    except Exception as e:
+        logger.error("Failed to build DataFrame from top stats response: %s", e)
+        return pd.DataFrame(), "Received an unexpected response shape from the Cricbuzz API."
